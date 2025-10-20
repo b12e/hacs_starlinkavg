@@ -1,0 +1,5 @@
+{
+  "name": "Starlink Regional Metrics",
+  "render_readme": true,
+  "domains": ["sensor"]
+}

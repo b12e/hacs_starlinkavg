@@ -1,0 +1,22 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Starlink Regional Metrics",
+        "description": "Configure Starlink Regional Metrics integration. Enter your region ID (e.g., dXJuOm1ieGJuZDpDaEpFOnY0) and optionally a friendly name.",
+        "data": {
+          "region_id": "Region ID",
+          "region_name": "Region Name (Optional)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to Starlink API",
+      "invalid_region": "Region ID not found in API data",
+      "unknown": "Unexpected error occurred"
+    },
+    "abort": {
+      "already_configured": "This region is already configured"
+    }
+  }
+}
