@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Starlink Region ID Finder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #1e293b;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #1e3a8a;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #64748b;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #334155;
+            font-size: 14px;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        input::placeholder {
+            color: #94a3b8;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #64748b;
+            display: none;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #e2e8f0;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .results.active {
+            display: block;
+        }
+
+        .result-header {
+            font-weight: 600;
+            color: #1e3a8a;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .region-card {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: border-color 0.3s, transform 0.2s;
+        }
+
+        .region-card:hover {
+            border-color: #3b82f6;
+            transform: translateX(4px);
+        }
+
+        .region-id {
+            font-family: 'Monaco', 'Courier New', monospace;
+            background: #1e293b;
+            color: #fbbf24;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 12px;
+            word-break: break-all;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .copy-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            font-weight: 600;
+        }
+
+        .copy-btn:hover {
+            background: #2563eb;
+        }
+
+        .region-name {
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .metric {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .metric-label {
+            font-size: 11px;
+            color: #64748b;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .metric-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
+
+        .error {
+            background: #fef2f2;
+            border: 2px solid #fecaca;
+            color: #991b1b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .info-box {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #1e40af;
+        }
+
+        .info-box strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛰️ Starlink Region ID Finder</h1>
+        <p class="subtitle">Find your Starlink region ID based on metrics shown on the coverage map</p>
+
+        <div class="info-box">
+            <strong>How to use:</strong>
+            Enter the min and max values shown on the Starlink coverage map for your region. The tool will search for matching regions and display the region IDs you can use in Home Assistant.
+            <br><br>
+            <strong>Note:</strong> For latency, enter the values as shown (min is the best/lowest latency, max is the worst/highest).
+        </div>
+
+        <form id="searchForm">
+            <div class="input-group">
+                <label>Download Speed (Mbps)</label>
+                <div class="input-row">
+                    <input type="number" id="downloadMin" placeholder="Min (e.g., 50)" required step="1">
+                    <input type="number" id="downloadMax" placeholder="Max (e.g., 150)" required step="1">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Upload Speed (Mbps)</label>
+                <div class="input-row">
+                    <input type="number" id="uploadMin" placeholder="Min (e.g., 5)" required step="1">
+                    <input type="number" id="uploadMax" placeholder="Max (e.g., 20)" required step="1">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Latency (ms)</label>
+                <div class="input-row">
+                    <input type="number" id="latencyMin" placeholder="Min (e.g., 20)" required step="1">
+                    <input type="number" id="latencyMax" placeholder="Max (e.g., 40)" required step="1">
+                </div>
+            </div>
+
+            <button type="submit">Find My Region ID</button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Searching Starlink regions...</p>
+        </div>
+
+        <div class="results" id="results"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://cors-anywhere.com/https://api.starlink.com/public-files/metrics_residential.json';
+
+        // Country code mapping for admin0
+        const COUNTRY_CODES = {
+            'ARG': 'Argentina', 'AUS': 'Australia', 'AUT': 'Austria', 'BEL': 'Belgium',
+            'BRA': 'Brazil', 'CAN': 'Canada', 'CHL': 'Chile', 'COL': 'Colombia',
+            'CZE': 'Czech Republic', 'DNK': 'Denmark', 'DEU': 'Germany', 'ESP': 'Spain',
+            'FRA': 'France', 'GBR': 'United Kingdom', 'GRC': 'Greece', 'HRV': 'Croatia',
+            'IRL': 'Ireland', 'ITA': 'Italy', 'JPN': 'Japan', 'LTU': 'Lithuania',
+            'MEX': 'Mexico', 'NLD': 'Netherlands', 'NZL': 'New Zealand', 'POL': 'Poland',
+            'PRT': 'Portugal', 'ROU': 'Romania', 'SVK': 'Slovakia', 'SVN': 'Slovenia',
+            'SWE': 'Sweden', 'USA': 'United States', 'NOR': 'Norway', 'FIN': 'Finland',
+            'CHE': 'Switzerland', 'IDN': 'Indonesia', 'PHL': 'Philippines', 'THA': 'Thailand',
+            'MYS': 'Malaysia', 'SGP': 'Singapore', 'PER': 'Peru', 'URY': 'Uruguay'
+        };
+
+        // Decode base64 URN and extract region info
+        function decodeRegionURN(urn) {
+            try {
+                const decoded = atob(urn);
+                const parts = decoded.split(':');
+
+                if (parts.length >= 3) {
+                    const regionCode = parts[parts.length - 1];
+                    const countryHint = regionCode.slice(-2);
+
+                    // Determine country based on suffix
+                    let country = null;
+
+                    if (countryHint === 'JE') {
+                        country = 'Spain';
+                    } else if (countryHint === 'Lp') {
+                        country = 'United States';
+                    } else if (countryHint === 'Jl') {
+                        country = 'Indonesia';
+                    }
+
+                    return {
+                        decoded: decoded,
+                        country: country,
+                        regionCode: regionCode
+                    };
+                }
+            } catch (e) {
+                console.error('Failed to decode URN:', urn, e);
+            }
+            return null;
+        }
+
+        // Round like Starlink: >=0.5 rounds up, <0.5 rounds down
+        function smartRound(value) {
+            return Math.floor(value + 0.5);
+        }
+
+        // Check if metrics match by comparing rounded values
+        function metricsMatch(apiData, input) {
+            // Round the API data to match what Starlink displays
+            // Note: Latency uses p80 as min (best) and p20 as max (worst)
+            // Download/Upload use p20 as min and p80 as max
+            const roundedDownloadMin = smartRound(apiData.download_p20);
+            const roundedDownloadMax = smartRound(apiData.download_p80);
+            const roundedUploadMin = smartRound(apiData.upload_p20);
+            const roundedUploadMax = smartRound(apiData.upload_p80);
+
+            // For latency, lower is better, so p80 is min and p20 is max
+            const roundedLatencyMin = smartRound(apiData.latency_p80);
+            const roundedLatencyMax = smartRound(apiData.latency_p20);
+
+            // Compare rounded API values with user input
+            return roundedDownloadMin === input.downloadMin &&
+                   roundedDownloadMax === input.downloadMax &&
+                   roundedUploadMin === input.uploadMin &&
+                   roundedUploadMax === input.uploadMax &&
+                   roundedLatencyMin === input.latencyMin &&
+                   roundedLatencyMax === input.latencyMax;
+        }
+
+        async function searchRegions(event) {
+            event.preventDefault();
+
+            // Parse input as integers (what the user sees on the map)
+            const input = {
+                downloadMin: parseInt(document.getElementById('downloadMin').value),
+                downloadMax: parseInt(document.getElementById('downloadMax').value),
+                uploadMin: parseInt(document.getElementById('uploadMin').value),
+                uploadMax: parseInt(document.getElementById('uploadMax').value),
+                latencyMin: parseInt(document.getElementById('latencyMin').value),
+                latencyMax: parseInt(document.getElementById('latencyMax').value)
+            };
+
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+
+            loading.classList.add('active');
+            results.classList.remove('active');
+            results.innerHTML = '';
+
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+
+                const matches = [];
+
+                // Search admin0 (country level)
+                if (data.admin0Metrics) {
+                    for (const [regionId, metrics] of Object.entries(data.admin0Metrics)) {
+                        if (metricsMatch(metrics, input)) {
+                            const countryName = COUNTRY_CODES[regionId] || null;
+                            matches.push({
+                                id: regionId,
+                                country: countryName,
+                                regionName: regionId,
+                                metrics: metrics
+                            });
+                        }
+                    }
+                }
+
+                // Search admin1 (subdivision level)
+                if (data.admin1Metrics) {
+                    for (const [regionId, metrics] of Object.entries(data.admin1Metrics)) {
+                        if (metricsMatch(metrics, input)) {
+                            const decoded = decodeRegionURN(regionId);
+
+                            matches.push({
+                                id: regionId,
+                                country: decoded ? decoded.country : null,
+                                regionName: decoded ? decoded.regionCode : regionId,
+                                metrics: metrics,
+                                decoded: decoded
+                            });
+                        }
+                    }
+                }
+
+                displayResults(matches);
+            } catch (error) {
+                results.innerHTML = `<div class="error">Error fetching data: ${error.message}</div>`;
+                results.classList.add('active');
+            } finally {
+                loading.classList.remove('active');
+            }
+        }
+
+        function displayResults(matches) {
+            const results = document.getElementById('results');
+
+            if (matches.length === 0) {
+                results.innerHTML = `
+                    <div class="no-results">
+                        <h2>😔 No Matching Regions Found</h2>
+                        <p>Try adjusting your values slightly. Starlink may round the numbers shown on the map.</p>
+                    </div>
+                `;
+            } else {
+                let html = `<div class="result-header">Found ${matches.length} matching region${matches.length > 1 ? 's' : ''}:</div>`;
+
+                matches.forEach(match => {
+                    // Round values for display
+                    const downloadMin = smartRound(match.metrics.download_p20);
+                    const downloadMax = smartRound(match.metrics.download_p80);
+                    const uploadMin = smartRound(match.metrics.upload_p20);
+                    const uploadMax = smartRound(match.metrics.upload_p80);
+                    const latencyMin = smartRound(match.metrics.latency_p80);
+                    const latencyMax = smartRound(match.metrics.latency_p20);
+
+                    // Build region display name
+                    let displayName = '';
+                    if (match.country) {
+                        displayName = `${match.country} - ${match.regionName}`;
+                    } else {
+                        displayName = match.regionName;
+                    }
+
+                    html += `
+                        <div class="region-card">
+                            <div class="region-name">${displayName}</div>
+                            <div class="region-id">
+                                <span>${match.id}</span>
+                                <button class="copy-btn" onclick="copyToClipboard('${match.id}')">Copy</button>
+                            </div>
+                            <div class="metrics-grid">
+                                <div class="metric">
+                                    <div class="metric-label">Download</div>
+                                    <div class="metric-value">${downloadMin}-${downloadMax} Mbps</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">Upload</div>
+                                    <div class="metric-value">${uploadMin}-${uploadMax} Mbps</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">Latency</div>
+                                    <div class="metric-value">${latencyMin}-${latencyMax} ms</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                results.innerHTML = html;
+            }
+
+            results.classList.add('active');
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Region ID copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+            });
+        }
+
+        document.getElementById('searchForm').addEventListener('submit', searchRegions);
+    </script>
+</body>
+</html>

@@ -6,6 +6,6 @@
   "documentation": "https://github.com/b12e/hacs_starlinkavg",
   "issue_tracker": "https://github.com/b12e/hacs_starlinkavg/issues",
   "requirements": [],
-  "version": "1.0.0",
+  "version": "1.0.1",
   "iot_class": "cloud_polling"
 }
