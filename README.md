@@ -51,6 +51,8 @@ Your region ID can be found in the Starlink metrics API. To find available regio
 2. Search for your country or region
 3. Copy the region identifier (the key before the metrics data)
 
+You can try to find your region by entering the values the Starlink website displays, using this tool: https://starlink-region-finder.b12e.be/
+
 Example region IDs:
 - `dXJuOm1ieGJuZDpDaEpFOnY0` (example region)
 
