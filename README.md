@@ -10,7 +10,7 @@ A Home Assistant integration that fetches regional average speeds and latency me
   - Latency (P20, P50/median, P80 percentiles)
   - Download speeds (P20, P50/median, P80 percentiles)
   - Upload speeds (P20, P50/median, P80 percentiles)
-- Automatic weekly updates
+- Automatic weekly updates (Starlink themselves update the metrics once a month on an unknown date)
 - Historical data recording to Home Assistant long-term statistics
 - UI-based configuration via Config Flow
 - Supports all regions available in Starlink's public metrics API
@@ -45,13 +45,16 @@ A Home Assistant integration that fetches regional average speeds and latency me
 
 ### Finding Your Region ID
 
+#### Automatic
+You can try to find your region by entering the values the Starlink website displays, using this tool: https://starlink-region-finder.b12e.be/
+
+#### Manual
 Your region ID can be found in the Starlink metrics API. To find available regions:
 
 1. Visit https://api.starlink.com/public-files/metrics_residential.json
 2. Search for your country or region
 3. Copy the region identifier (the key before the metrics data)
 
-You can try to find your region by entering the values the Starlink website displays, using this tool: https://starlink-region-finder.b12e.be/
 
 Example region IDs:
 - `dXJuOm1ieGJuZDpDaEpFOnY0` (example region)
@@ -78,7 +81,7 @@ The integration creates 9 sensors for your region:
 ## Data Updates
 
 - The integration fetches new data every **7 days** (weekly)
-- All sensor values are automatically recorded to Home Assistant's long-term statistics
+- All sensor values are automatically recorded to Home Assistant's long-term statistics so you can track Starlink's progress in speeds for your region
 - Historical data can be viewed in the sensor history and statistics graphs
 
 ## Percentile Explanation
