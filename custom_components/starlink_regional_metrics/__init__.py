@@ -7,6 +7,7 @@ from datetime import timedelta
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 import aiohttp
 
@@ -19,12 +20,22 @@ API_URL = "https://api.starlink.com/public-files/metrics_residential.json"
 UPDATE_INTERVAL = timedelta(days=7)
 
 
+class InvalidRegionError(Exception):
+    """Error to indicate the region ID is no longer valid."""
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Starlink Regional Metrics from a config entry."""
     hass.data.setdefault(DOMAIN, {})
 
     coordinator = StarlinkMetricsCoordinator(hass, entry)
-    await coordinator.async_config_entry_first_refresh()
+    try:
+        await coordinator.async_config_entry_first_refresh()
+    except InvalidRegionError as err:
+        raise ConfigEntryError(
+            f"Region ID '{entry.data['region_id']}' not found. "
+            "Please reconfigure with a valid region ID."
+        ) from err
 
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
@@ -73,11 +84,13 @@ class StarlinkMetricsCoordinator(DataUpdateCoordinator):
                         region_data = data["admin1Metrics"][self.region_id]
 
                     if region_data is None:
-                        raise UpdateFailed(f"Region ID {self.region_id} not found in API data")
+                        raise InvalidRegionError(f"Region ID {self.region_id} not found in API data")
 
                     return region_data
 
         except aiohttp.ClientError as err:
             raise UpdateFailed(f"Error communicating with API: {err}") from err
+        except InvalidRegionError:
+            raise
         except Exception as err:
             raise UpdateFailed(f"Unexpected error: {err}") from err
