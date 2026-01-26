@@ -93,6 +93,53 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             },
         )
 
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Handle reconfiguration of the integration."""
+        errors: dict[str, str] = {}
+        reconfigure_entry = self._get_reconfigure_entry()
+
+        if user_input is not None:
+            try:
+                info = await validate_input(self.hass, user_input)
+            except CannotConnect:
+                errors["base"] = "cannot_connect"
+            except InvalidRegion:
+                errors["base"] = "invalid_region"
+            except Exception:  # pylint: disable=broad-except
+                _LOGGER.exception("Unexpected exception")
+                errors["base"] = "unknown"
+            else:
+                # Check if the new region_id is already configured by another entry
+                if user_input["region_id"] != reconfigure_entry.data["region_id"]:
+                    await self.async_set_unique_id(user_input["region_id"])
+                    self._abort_if_unique_id_configured()
+
+                return self.async_update_reload_and_abort(
+                    reconfigure_entry,
+                    title=info["title"],
+                    data=user_input,
+                )
+
+        # Pre-fill with existing values
+        current_data = reconfigure_entry.data
+        schema = vol.Schema(
+            {
+                vol.Required("region_id", default=current_data.get("region_id", "")): str,
+                vol.Optional("region_name", default=current_data.get("region_name", "")): str,
+            }
+        )
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=schema,
+            errors=errors,
+            description_placeholders={
+                "region_id_example": "dXJuOm1ieGJuZDpDaEpFOnY0"
+            },
+        )
+
 
 class CannotConnect(HomeAssistantError):
     """Error to indicate we cannot connect."""

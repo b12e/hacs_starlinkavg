@@ -8,6 +8,14 @@
           "region_id": "Region ID",
           "region_name": "Region Name (Optional)"
         }
+      },
+      "reconfigure": {
+        "title": "Reconfigure Starlink Regional Metrics",
+        "description": "Update the region ID for this integration. Enter your new region ID (e.g., dXJuOm1ieGJuZDpDaEpFOnY0) and optionally a friendly name.",
+        "data": {
+          "region_id": "Region ID",
+          "region_name": "Region Name (Optional)"
+        }
       }
     },
     "error": {
@@ -16,7 +24,8 @@
       "unknown": "Unexpected error occurred"
     },
     "abort": {
-      "already_configured": "This region is already configured"
+      "already_configured": "This region is already configured",
+      "reconfigure_successful": "Configuration updated successfully"
     }
   }
 }
