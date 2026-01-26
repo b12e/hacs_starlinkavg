@@ -20,22 +20,38 @@ API_URL = "https://api.starlink.com/public-files/metrics_residential.json"
 UPDATE_INTERVAL = timedelta(days=7)
 
 
-class InvalidRegionError(Exception):
-    """Error to indicate the region ID is no longer valid."""
+async def validate_region_exists(region_id: str) -> bool:
+    """Check if a region ID exists in the API before setting up."""
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(API_URL, timeout=aiohttp.ClientTimeout(total=30)) as response:
+                if response.status != 200:
+                    return True  # Can't validate, let coordinator handle it
+                data = await response.json()
+                if "admin0Metrics" in data and region_id in data["admin0Metrics"]:
+                    return True
+                if "admin1Metrics" in data and region_id in data["admin1Metrics"]:
+                    return True
+                return False
+    except Exception:
+        return True  # Can't validate, let coordinator handle it
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Starlink Regional Metrics from a config entry."""
     hass.data.setdefault(DOMAIN, {})
 
-    coordinator = StarlinkMetricsCoordinator(hass, entry)
-    try:
-        await coordinator.async_config_entry_first_refresh()
-    except InvalidRegionError as err:
+    region_id = entry.data["region_id"]
+
+    # Validate region exists before setting up coordinator
+    if not await validate_region_exists(region_id):
         raise ConfigEntryError(
-            f"Region ID '{entry.data['region_id']}' not found. "
+            f"Region ID '{region_id}' not found in Starlink API. "
             "Please reconfigure with a valid region ID."
-        ) from err
+        )
+
+    coordinator = StarlinkMetricsCoordinator(hass, entry)
+    await coordinator.async_config_entry_first_refresh()
 
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
@@ -84,13 +100,13 @@ class StarlinkMetricsCoordinator(DataUpdateCoordinator):
                         region_data = data["admin1Metrics"][self.region_id]
 
                     if region_data is None:
-                        raise InvalidRegionError(f"Region ID {self.region_id} not found in API data")
+                        raise UpdateFailed(f"Region ID {self.region_id} not found in API data")
 
                     return region_data
 
         except aiohttp.ClientError as err:
             raise UpdateFailed(f"Error communicating with API: {err}") from err
-        except InvalidRegionError:
+        except UpdateFailed:
             raise
         except Exception as err:
             raise UpdateFailed(f"Unexpected error: {err}") from err
